@@ -43,7 +43,7 @@ public class DishRepository
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task DeleteDishAsync(int dishId)
+    public async Task<Dish> DeleteDishAsync(int dishId)
     {
         var dish = await dbContext.Dishes.FindAsync(dishId);
         if (dish != null)
@@ -51,6 +51,8 @@ public class DishRepository
             dbContext.Dishes.Remove(dish);
             await dbContext.SaveChangesAsync();
         }
+
+        return dish; // Return the deleted dish
     }
 
     public async Task<List<Dish>> GetDishesByCourseIdAsync(int courseId)

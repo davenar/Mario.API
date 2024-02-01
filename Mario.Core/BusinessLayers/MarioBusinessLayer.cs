@@ -71,9 +71,13 @@ namespace Mario.Core.BusinessLayers
             await _dishRepository.UpdateDishAsync(dish);
         }
 
-        public async Task DeleteDishAsync(int dishId)
+        public async Task<Dish> DeleteDishAsync(int dishId)
         {
-            await _dishRepository.DeleteDishAsync(dishId);
+            // Logic to delete the dish from the repository
+            var deletedDish = await _dishRepository.DeleteDishAsync(dishId);
+
+            // Optionally, you can return the deleted dish for the response
+            return deletedDish;
         }
 
         public async Task<IEnumerable<Dish>> GetDishesByCourseIdAsync(int courseId)

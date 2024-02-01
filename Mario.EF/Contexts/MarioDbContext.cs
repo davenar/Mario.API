@@ -32,6 +32,11 @@ namespace Mario.EF.Contexts
                 .HasOne(d => d.Course)              // Un Dish ha una relazione con un Course
                 .WithMany(c => c.AvailableDishes)   // Un Course può avere molti AvailableDishes
                 .HasForeignKey(d => d.CourseId);    // La chiave esterna su Dish è CourseId
+
+            // Gestisci la colonna Ingredients non mappata
+            modelBuilder.Entity<Dish>()
+                .Property(d => d.IngredientsAsString)
+                .HasColumnName("Ingredients"); // Usa il nome desiderato per la colonna nel database
         }
     }
 }
