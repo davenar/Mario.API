@@ -87,7 +87,7 @@ namespace Mario.API.Controllers
         [HttpPost]
         [ProducesResponseType(statusCode: 201, type: typeof(DishResponse))]
         [Route("CreateDish")]
-        public async Task<IActionResult> CreateDish([FromBody] DishCreateRequest request)
+        public async Task<IActionResult> CreateDish([FromForm] DishCreateRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -105,10 +105,19 @@ namespace Mario.API.Controllers
                 }
             }
 
+            // Check file size
+            if (request.Image != null)
+            {
+                if (request.Image.Length > 2 * 1024 * 1024) // 2MB
+                {
+                    return BadRequest("Image size exceeds the limit of 2MB.");
+                }
+            }
+
             var dish = new Dish
             {
                 Name = request.Name,
-                Image = request.Image,
+                Image = await GetBytesFromFormFile(request.Image),
                 Ingredients = request.Ingredients ?? new List<string>(),
                 Price = request.Price,
                 CourseId = request.CourseId
@@ -129,10 +138,24 @@ namespace Mario.API.Controllers
             return CreatedAtAction(nameof(FetchAllDishes), new { id = dish.Id }, response);
         }
 
+        private async Task<byte[]> GetBytesFromFormFile(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return null;
+            }
+
+            using (var ms = new MemoryStream())
+            {
+                await file.CopyToAsync(ms);
+                return ms.ToArray();
+            }
+        }
+
         [HttpPut]
         [ProducesResponseType(statusCode: 200, type: typeof(DishResponse))]
         [Route("UpdateDish")]
-        public async Task<IActionResult> UpdateDish([FromBody] DishUpdateRequest request)
+        public async Task<IActionResult> UpdateDish([FromForm] DishUpdateRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -157,8 +180,17 @@ namespace Mario.API.Controllers
                 return NotFound();
             }
 
+            // Check file size
+            if (request.Image != null)
+            {
+                if (request.Image.Length > 2 * 1024 * 1024) // 2MB
+                {
+                    return BadRequest("Image size exceeds the limit of 2MB.");
+                }
+            }
+
             existingDish.Name = request.Name;
-            existingDish.Image = request.Image;
+            existingDish.Image = await GetBytesFromFormFile(request.Image);
             existingDish.Ingredients = request.Ingredients ?? new List<string>();
             existingDish.Price = request.Price;
             existingDish.CourseId = request.CourseId;
