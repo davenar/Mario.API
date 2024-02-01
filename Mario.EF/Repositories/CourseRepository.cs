@@ -51,24 +51,18 @@ namespace Mario.EF.Repositories
             await dbContext.SaveChangesAsync();
         }
 
-        public async Task DeleteCourseAsync(int courseId)
+        public async Task<Course> DeleteCourseAsync(int courseId)
         {
             var course = await dbContext.Courses.FindAsync(courseId);
+
             if (course != null)
             {
                 dbContext.Courses.Remove(course);
                 await dbContext.SaveChangesAsync();
             }
+
+            return course; // Return the deleted course
         }
-
-        //public async Task<IEnumerable<Dish>> GetDishesByCourseIdAsync(int courseId)
-        //{
-        //    var course = await dbContext.Courses
-        //        .Include(c => c.AvailableDishes)
-        //        .FirstOrDefaultAsync(c => c.Id == courseId);
-
-        //    return course?.AvailableDishes.ToList() ?? new List<Dish>();
-        //}
     }
 
 }

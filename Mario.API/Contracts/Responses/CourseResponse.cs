@@ -6,6 +6,5 @@ namespace Mario.API.Contracts.Responses
     {
         public int Id { get; set; }
         public string? Description { get; set; }
-        public List<DishResponse> AvailableDishes { get; set; }
     }
 }

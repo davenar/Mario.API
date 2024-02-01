@@ -40,9 +40,13 @@ namespace Mario.Core.BusinessLayers
             await _courseRepository.UpdateCourseAsync(course);
         }
 
-        public async Task DeleteCourseAsync(int courseId)
+        public async Task<Course> DeleteCourseAsync(int courseId)
         {
-            await _courseRepository.DeleteCourseAsync(courseId);
+            // Logic to delete the course from the repository
+            var deletedCourse = await _courseRepository.DeleteCourseAsync(courseId);
+
+            // Optionally, you can return the deleted course for the response
+            return deletedCourse;
         }
         #endregion
 
