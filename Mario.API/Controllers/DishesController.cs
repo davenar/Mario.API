@@ -29,9 +29,9 @@ namespace Mario.API.Controllers
             var response = data.Select(x => new DishResponse
             {
                 Id = x.Id,
-                Course = x?.Course is not null ? new CourseResponse { Id = x.Course.Id, Description = x?.Course?.Description} : null,
+                Course = x?.Course is not null ? new CourseResponse { Id = x.Course.Id, Description = x?.Course?.Description } : null,
                 Image = x.Image,
-                Ingredients = x?.Ingredients ?? new(),
+                Ingredients = x?.Ingredients ?? new List<string>(),
                 Name = x.Name,
                 Price = x.Price
             }).ToList();
@@ -40,7 +40,27 @@ namespace Mario.API.Controllers
         }
 
         [HttpGet]
-        [ProducesResponseType(statusCode: 200, type: typeof(Dish))]
+        [ProducesResponseType(statusCode: 200, type: typeof(IEnumerable<DishResponse>))]
+        [Route("GetDishesByCourseId/{courseId}")]
+        public async Task<IActionResult> GetDishesByCourseId(int courseId)
+        {
+            var data = await _marioBusinessLayer.GetDishesByCourseIdAsync(courseId);
+
+            var response = data.Select(x => new DishResponse
+            {
+                Id = x.Id,
+                Course = x?.Course is not null ? new CourseResponse { Id = x.Course.Id, Description = x?.Course?.Description } : null,
+                Image = x.Image,
+                Ingredients = x?.Ingredients ?? new List<string>(),
+                Name = x.Name,
+                Price = x.Price
+            }).ToList();
+
+            return Ok(response);
+        }
+
+        [HttpGet]
+        [ProducesResponseType(statusCode: 200, type: typeof(DishResponse))]
         [Route("GetDishById/{dishId}")]
         public async Task<IActionResult> GetDishById(int dishId)
         {
@@ -51,11 +71,21 @@ namespace Mario.API.Controllers
                 return NotFound();
             }
 
-            return Ok(dish);
+            var response = new DishResponse
+            {
+                Id = dish.Id,
+                Course = dish?.Course is not null ? new CourseResponse { Id = dish.Course.Id, Description = dish?.Course?.Description } : null,
+                Image = dish?.Image,
+                Ingredients = dish?.Ingredients ?? new List<string>(),
+                Name = dish?.Name,
+                Price = dish?.Price
+            };
+
+            return Ok(response);
         }
 
         [HttpPost]
-        [ProducesResponseType(statusCode: 201, type: typeof(Dish))]
+        [ProducesResponseType(statusCode: 201, type: typeof(DishResponse))]
         [Route("CreateDish")]
         public async Task<IActionResult> CreateDish([FromBody] DishCreateRequest request)
         {
@@ -64,26 +94,60 @@ namespace Mario.API.Controllers
                 return BadRequest(ModelState);
             }
 
+            // Check if the specified CourseId exists
+            if (request.CourseId.HasValue)
+            {
+                var course = await _marioBusinessLayer.GetCourseByIdAsync(request.CourseId.Value);
+
+                if (course == null)
+                {
+                    return BadRequest($"Course with Id {request.CourseId} does not exist.");
+                }
+            }
+
             var dish = new Dish
             {
-                // Set properties based on the DishCreateRequest model
                 Name = request.Name,
-                // Add other properties as needed
+                Image = request.Image,
+                Ingredients = request.Ingredients ?? new List<string>(),
+                Price = request.Price,
+                CourseId = request.CourseId
             };
 
             await _marioBusinessLayer.AddDishAsync(dish);
 
-            return CreatedAtAction(nameof(FetchAllDishes), new { id = dish.Id }, dish);
+            var response = new DishResponse
+            {
+                Id = dish.Id,
+                Course = dish?.Course is not null ? new CourseResponse { Id = dish.Course.Id, Description = dish?.Course?.Description } : null,
+                Image = dish?.Image,
+                Ingredients = dish?.Ingredients ?? new List<string>(),
+                Name = dish?.Name,
+                Price = dish?.Price
+            };
+
+            return CreatedAtAction(nameof(FetchAllDishes), new { id = dish.Id }, response);
         }
 
         [HttpPut]
-        [ProducesResponseType(statusCode: 200, type: typeof(Dish))]
+        [ProducesResponseType(statusCode: 200, type: typeof(DishResponse))]
         [Route("UpdateDish")]
         public async Task<IActionResult> UpdateDish([FromBody] DishUpdateRequest request)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            // Check if the specified CourseId exists
+            if (request.CourseId.HasValue)
+            {
+                var course = await _marioBusinessLayer.GetCourseByIdAsync(request.CourseId.Value);
+
+                if (course == null)
+                {
+                    return BadRequest($"Course with Id {request.CourseId} does not exist.");
+                }
             }
 
             var existingDish = await _marioBusinessLayer.GetDishByIdAsync(request.Id);
@@ -93,17 +157,29 @@ namespace Mario.API.Controllers
                 return NotFound();
             }
 
-            // Update existingDish properties based on the DishUpdateRequest model
             existingDish.Name = request.Name;
-            // Update other properties as needed
+            existingDish.Image = request.Image;
+            existingDish.Ingredients = request.Ingredients ?? new List<string>();
+            existingDish.Price = request.Price;
+            existingDish.CourseId = request.CourseId;
 
             await _marioBusinessLayer.UpdateDishAsync(existingDish);
 
-            return Ok(existingDish);
+            var response = new DishResponse
+            {
+                Id = existingDish.Id,
+                Course = existingDish?.Course is not null ? new CourseResponse { Id = existingDish.Course.Id, Description = existingDish?.Course?.Description } : null,
+                Image = existingDish?.Image,
+                Ingredients = existingDish?.Ingredients ?? new List<string>(),
+                Name = existingDish?.Name,
+                Price = existingDish?.Price
+            };
+
+            return Ok(response);
         }
 
         [HttpDelete]
-        [ProducesResponseType(statusCode: 200, type: typeof(Dish))]
+        [ProducesResponseType(statusCode: 200, type: typeof(DishResponse))]
         [Route("DeleteDish/{dishId}")]
         public async Task<IActionResult> DeleteDish(int dishId)
         {
@@ -114,17 +190,24 @@ namespace Mario.API.Controllers
                 return NotFound();
             }
 
-            return Ok(deletedDish);
+            var response = new DishResponse
+            {
+                Id = deletedDish.Id,
+                Course = deletedDish?.Course is not null ? new CourseResponse { Id = deletedDish.Course.Id, Description = deletedDish?.Course?.Description } : null,
+                Image = deletedDish.Image,
+                Ingredients = deletedDish?.Ingredients ?? new List<string>(),
+                Name = deletedDish.Name,
+                Price = deletedDish.Price
+            };
+
+            return Ok(response);
         }
 
-        [HttpGet]
-        [ProducesResponseType(statusCode: 200, type: typeof(IEnumerable<Dish>))]
-        [Route("GetDishesByCourseId/{courseId}")]
-        public async Task<IActionResult> GetDishesByCourseId(int courseId)
-        {
-            var data = await _marioBusinessLayer.GetDishesByCourseIdAsync(courseId);
-            return Ok(data);
-        }
+
+
+
+
+
     }
 
 }
